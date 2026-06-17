@@ -10824,6 +10824,72 @@ class TestDataSetMissingData:
         )
 
 
+class TestReplaceDataSet:
+    def test_404(self, authenticated_grant_admin_client):
+        response = authenticated_grant_admin_client.get(
+            url_for(
+                "deliver_grant_funding.replace_data_set",
+                grant_id=uuid.uuid4(),
+                collection_type=CollectionType.MONITORING_REPORT,
+                collection_id=uuid.uuid4(),
+                data_source_id=uuid.uuid4(),
+            )
+        )
+        assert response.status_code == 404
+
+    def test_mismatched_collection_data_source_ids(self, authenticated_grant_admin_client, factories):
+        grant = factories.grant.create()
+        collection = factories.collection.create(grant=grant)
+        data_source = factories.data_source.create(
+            collection=collection, grant=grant, type=DataSourceType.GRANT_RECIPIENT
+        )
+        response = authenticated_grant_admin_client.get(
+            url_for(
+                "deliver_grant_funding.replace_data_set",
+                grant_id=uuid.uuid4(),
+                collection_type=CollectionType.MONITORING_REPORT,
+                collection_id=collection.id,
+                data_source_id=data_source.id,
+            )
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.parametrize(
+        "client_fixture, can_access",
+        (
+            ("authenticated_grant_member_client", False),
+            ("authenticated_grant_admin_client", True),
+        ),
+    )
+    def test_get(self, client_fixture, can_access, request: FixtureRequest, factories):
+        client = request.getfixturevalue(client_fixture)
+        grant = client.grant
+        collection = factories.collection.create(grant=grant)
+        data_source = factories.data_source.create(
+            collection=collection,
+            grant=grant,
+            type=DataSourceType.GRANT_RECIPIENT,
+            name="access test",
+        )
+
+        response = client.get(
+            url_for(
+                "deliver_grant_funding.replace_data_set",
+                grant_id=grant.id,
+                collection_type=CollectionType.MONITORING_REPORT,
+                collection_id=collection.id,
+                data_source_id=data_source.id,
+            )
+        )
+
+        soup = BeautifulSoup(response.data, "html.parser")
+        if can_access:
+            assert response.status_code == 200
+            assert f"{collection.name} Replace access test data set" in get_h1_text(soup)
+        else:
+            assert response.status_code == 403
+
+
 class TestViewDataSource:
     def test_404(self, authenticated_grant_member_client):
         response = authenticated_grant_member_client.get(

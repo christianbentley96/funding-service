@@ -1,5 +1,8 @@
 from app import QuestionDataType
-from app.common.data.types import ExpressionType, ManagedExpressionsEnum
+from app.common.data.types import (
+    ExpressionType,
+    ManagedExpressionsEnum,
+)
 from app.deliver_grant_funding.session_models import (
     AddConditionDependsOnSessionModel,
     AddContextToComponentGuidanceSessionModel,

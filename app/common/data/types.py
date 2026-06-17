@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.common.collections.runner import FormRunner
     from app.common.data.models import Form, Question
     from app.deliver_grant_funding.forms import GroupDisplayOptionsForm, QuestionForm
+    from app.deliver_grant_funding.session_models import DataSetColumnMapping
 
 scalars = str | int | float | bool | None
 json_scalars = dict[str, Any]
@@ -577,6 +578,38 @@ class DataSourceSchemaColumn(BaseModel):
     presentation_options: QuestionPresentationOptions
     data_options: QuestionDataOptions
     original_column_name: str
+
+    def as_data_set_column_mapping(self) -> DataSetColumnMapping:
+
+        from app.deliver_grant_funding.session_models import DataSetColumnMapping
+
+        match self.data_type:
+            case QuestionDataType.TEXT_SINGLE_LINE:
+                return DataSetColumnMapping(column_name=self.original_column_name, column_type="TEXT")
+            case QuestionDataType.NUMBER:
+                if self.data_options.number_type == NumberTypeEnum.DECIMAL:
+                    is_british_pounds = (
+                        self.presentation_options.prefix == "£" and self.data_options.max_decimal_places == 2
+                    )
+                    return DataSetColumnMapping(
+                        column_name=self.original_column_name,
+                        column_type="BRITISH_POUNDS" if is_british_pounds else "DECIMAL",
+                        prefix=self.presentation_options.prefix,
+                        suffix=self.presentation_options.suffix,
+                        max_decimal_places=self.data_options.max_decimal_places,
+                    )
+                elif self.data_options.number_type == NumberTypeEnum.INTEGER:
+                    return DataSetColumnMapping(
+                        column_name=self.original_column_name,
+                        column_type="INTEGER",
+                        prefix=self.presentation_options.prefix,
+                        suffix=self.presentation_options.suffix,
+                    )
+
+        raise ValueError(
+            f"Cannot build data set column mapping for data type {self.data_type}"
+            + f", number type {self.data_options.number_type}"
+        )
 
 
 class DataSourceSchema(RootModel[dict[str, DataSourceSchemaColumn]]):

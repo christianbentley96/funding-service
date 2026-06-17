@@ -1,3 +1,5 @@
+import pytest
+
 from app import CollectionStatusEnum
 from app.common.data.types import (
     DataSourceFileMetadata,
@@ -228,3 +230,63 @@ class TestDataSourceSchemaPostgresType:
 
         assert "max_decimal_places" not in result["c_theme_name"].get("data_options", {})
         assert "prefix" not in result["c_theme_name"].get("presentation_options", {})
+
+
+class TestDataSourceSchemaColumnAsDataSetColumnMapping:
+    def test_text_single_line(self):
+        schema_column = DataSourceSchemaColumn(
+            data_type=QuestionDataType.TEXT_SINGLE_LINE,
+            presentation_options=QuestionPresentationOptions(),
+            data_options=QuestionDataOptions(),
+            original_column_name="Grant allocation",
+        )
+        result = schema_column.as_data_set_column_mapping()
+        assert result.column_type == "TEXT"
+        assert result.column_name == "Grant allocation"
+        assert result.prefix is None
+        assert result.suffix is None
+        assert result.max_decimal_places is None
+
+    @pytest.mark.parametrize("prefix,suffix", [(None, "km"), (None, None), ("$", None)])
+    def test_integer(self, prefix, suffix):
+        schema_column = DataSourceSchemaColumn(
+            data_type=QuestionDataType.NUMBER,
+            presentation_options=QuestionPresentationOptions(prefix=prefix, suffix=suffix),
+            data_options=QuestionDataOptions(number_type=NumberTypeEnum.INTEGER),
+            original_column_name="Grant allocation",
+        )
+        result = schema_column.as_data_set_column_mapping()
+        assert result.column_type == "INTEGER"
+        assert result.column_name == "Grant allocation"
+        assert result.prefix == prefix
+        assert result.suffix == suffix
+        assert result.max_decimal_places is None
+
+    @pytest.mark.parametrize("prefix,suffix", [(None, "km"), (None, None), ("$", None), ("£", None)])
+    def test_decimal(self, prefix, suffix):
+        schema_column = DataSourceSchemaColumn(
+            data_type=QuestionDataType.NUMBER,
+            presentation_options=QuestionPresentationOptions(prefix=prefix, suffix=suffix),
+            data_options=QuestionDataOptions(number_type=NumberTypeEnum.DECIMAL, max_decimal_places=3),
+            original_column_name="Grant allocation",
+        )
+        result = schema_column.as_data_set_column_mapping()
+        assert result.column_type == "DECIMAL"
+        assert result.column_name == "Grant allocation"
+        assert result.prefix == prefix
+        assert result.suffix == suffix
+        assert result.max_decimal_places == 3
+
+    def test_british_pounds(self):
+        schema_column = DataSourceSchemaColumn(
+            data_type=QuestionDataType.NUMBER,
+            presentation_options=QuestionPresentationOptions(prefix="£"),
+            data_options=QuestionDataOptions(number_type=NumberTypeEnum.DECIMAL, max_decimal_places=2),
+            original_column_name="Grant allocation",
+        )
+        result = schema_column.as_data_set_column_mapping()
+        assert result.column_type == "BRITISH_POUNDS"
+        assert result.column_name == "Grant allocation"
+        assert result.prefix == "£"
+        assert result.suffix is None
+        assert result.max_decimal_places == 2

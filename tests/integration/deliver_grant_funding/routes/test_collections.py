@@ -44,6 +44,7 @@ from app.common.data.types import (
     OrganisationModeEnum,
     QuestionDataOptions,
     QuestionPresentationOptions,
+    RoleEnum,
     SubmissionEventType,
     SubmissionModeEnum,
     SubmissionStatusEnum,
@@ -87,6 +88,7 @@ from app.deliver_grant_funding.session_models import (
     DataSetColumnMapping,
     DataSetUploadSessionModel,
 )
+from tests.integration.utils import build_file_upload_form_data
 from tests.models import FactoryAnswer
 from tests.utils import (
     AnyStringMatching,
@@ -10888,6 +10890,61 @@ class TestReplaceDataSet:
             assert f"{collection.name} Replace access test data set" in get_h1_text(soup)
         else:
             assert response.status_code == 403
+
+    def test_upload_with_multiple_data_errors_shows_all(
+        self, factories, authenticated_grant_admin_client, dataset_with_column_of_each_type
+    ):
+
+        grant = dataset_with_column_of_each_type.grant
+        factories.user_role.create(
+            user=authenticated_grant_admin_client.user,
+            grant=grant,
+            permissions=[RoleEnum.ADMIN],
+        )
+
+        factories.grant_recipient.create(
+            grant=grant,
+            organisation__external_id="E123",
+            organisation__name="Rivendell",
+        )
+        factories.grant_recipient.create(
+            grant=grant,
+            organisation__external_id="E456",
+            organisation__name="Lothlorien",
+        )
+
+        data = build_file_upload_form_data(
+            csv_content=(
+                dataset_with_column_of_each_type.expected_headers
+                + "\nE123,Rivendell,£100,1.2123123,hello,5,$10,12km"
+                + "\nE456,Lothlorien,£100abc,1.2,hello,5.9,$10,12km"
+            )
+        )
+
+        response = authenticated_grant_admin_client.post(
+            url_for(
+                "deliver_grant_funding.replace_data_set",
+                grant_id=grant.id,
+                collection_type=dataset_with_column_of_each_type.collection.type,
+                collection_id=dataset_with_column_of_each_type.collection.id,
+                data_source_id=dataset_with_column_of_each_type.id,
+            ),
+            data=data,
+            content_type="multipart/form-data",
+        )
+
+        assert response.status_code == 200
+        soup = BeautifulSoup(response.data, "html.parser")
+        assert page_has_error(
+            soup,
+            "One or more numbers in column 'British pounds' are not formatted as British pounds to 2 decimal places "
+            + "with the '£' prefix. For example, £100.00",
+        )
+        assert page_has_error(soup, "One or more numbers in column 'Whole number' are not whole numbers")
+        assert page_has_error(
+            soup,
+            "One or more numbers in column 'Decimal number' has more than 3 decimal places",
+        )
 
 
 class TestViewDataSource:

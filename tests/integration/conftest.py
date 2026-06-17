@@ -993,7 +993,7 @@ def mock_sentry_metrics(mocker) -> Generator[Any, Any, None]:
 @pytest.fixture(scope="function")
 def dataset_with_column_of_each_type(factories):
     grant_recipient = factories.grant_recipient.create()
-    collection = factories.collection.create()
+    collection = factories.collection.create(grant=grant_recipient.grant)
     schema = DataSourceSchema.model_validate(
         {
             "c_british_pounds": DataSourceSchemaColumn(

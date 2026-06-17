@@ -13,12 +13,12 @@
   {{ govukBackLink({ "text": "Back", "href": back_link }) }}
 {% endblock beforeContent %}
 
-{% block content %}
+{% block errorSummary %}
   <div class="govuk-grid-row">
     <div class="govuk-grid-column-two-thirds">
-      {% if gr_errors %}
+      {% if form.data_errors %}
         {% set error_list = [] %}
-        {% for error in gr_errors %}
+        {% for error in form.data_errors %}
           {% do error_list.append({"text": error, "href": "#file"}) %}
         {% endfor %}
         {{
@@ -28,6 +28,13 @@
           })
         }}
       {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
       <h1 class="govuk-heading-l">
         <span class="govuk-caption-l">{{ collection.name }}</span>
         {{ page_title }}
@@ -55,7 +62,7 @@
       <form method="POST" enctype="multipart/form-data" novalidate>
         {{ form.csrf_token }}
         {{ form.name }}
-        {{ form.file(params={"javascript": true}) }}
+        {{ form.file(params={"javascript": true, }) }}
         <p class="govuk-body">Only CSV (.csv) files can be uploaded for data sets.</p>
         <div class="govuk-button-group">
           {{ form.submit(params={"text": "Check and replace data set" }) }}

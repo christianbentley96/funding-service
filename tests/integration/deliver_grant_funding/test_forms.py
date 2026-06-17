@@ -88,8 +88,8 @@ class TestUploadDataSetForm:
 
         if is_existing:
             assert form.validate() is False
-            assert "Column 'Allocation' is missing from the selected file" in form.file.errors[0]
-            assert f"is being used in '{question.name}'" in form.file.errors[0]
+            assert "Column 'Allocation' is missing from the selected file" in form.data_errors[0]
+            assert f"is being used in '{question.text}'" in form.data_errors[0]
         else:
             assert form.validate() is True
 

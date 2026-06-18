@@ -26,7 +26,7 @@ from sqlalchemy_utils import create_database, database_exists
 from testcontainers.postgres import PostgresContainer
 from werkzeug.test import TestResponse
 
-from app import create_app
+from app import DATA_SET_EXTERNAL_ID_COLUMN_HEADER, DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER, create_app
 from app.common.collections.types import TextSingleLineAnswer
 from app.common.data.interfaces.system import seed_system_data
 from app.common.data.models import GrantRecipient, Submission
@@ -34,8 +34,14 @@ from app.common.data.models_user import User
 from app.common.data.types import (
     AuthMethodEnum,
     CollectionStatusEnum,
+    DataSourceSchema,
+    DataSourceSchemaColumn,
+    DataSourceType,
     GrantStatusEnum,
+    NumberTypeEnum,
+    QuestionDataOptions,
     QuestionDataType,
+    QuestionPresentationOptions,
     RoleEnum,
     SubmissionEventType,
     SubmissionModeEnum,
@@ -982,3 +988,59 @@ def track_sql_queries() -> t.Callable[[], _GeneratorContextManager[list[QueryInf
 def mock_sentry_metrics(mocker) -> Generator[Any, Any, None]:
     emit_metric_mock = mocker.patch("app.metrics.metrics.count")
     yield emit_metric_mock
+
+
+@pytest.fixture(scope="function")
+def dataset_with_column_of_each_type(factories):
+    grant_recipient = factories.grant_recipient.create()
+    collection = factories.collection.create()
+    schema = DataSourceSchema.model_validate(
+        {
+            "c_british_pounds": DataSourceSchemaColumn(
+                data_type=QuestionDataType.NUMBER,
+                presentation_options=QuestionPresentationOptions(prefix="£"),
+                data_options=QuestionDataOptions(number_type=NumberTypeEnum.DECIMAL, max_decimal_places=2),
+                original_column_name="British pounds",
+            ),
+            "c_decimal_number": DataSourceSchemaColumn(
+                data_type=QuestionDataType.NUMBER,
+                presentation_options=QuestionPresentationOptions(),
+                data_options=QuestionDataOptions(number_type=NumberTypeEnum.DECIMAL, max_decimal_places=3),
+                original_column_name="Decimal number",
+            ),
+            "c_just_text": DataSourceSchemaColumn(
+                data_type=QuestionDataType.TEXT_SINGLE_LINE,
+                presentation_options=QuestionPresentationOptions(),
+                data_options=QuestionDataOptions(),
+                original_column_name="Just text",
+            ),
+            "c_whole_number": DataSourceSchemaColumn(
+                data_type=QuestionDataType.NUMBER,
+                presentation_options=QuestionPresentationOptions(),
+                data_options=QuestionDataOptions(number_type=NumberTypeEnum.INTEGER),
+                original_column_name="Whole number",
+            ),
+            "c_whole_number_prefix": DataSourceSchemaColumn(
+                data_type=QuestionDataType.NUMBER,
+                presentation_options=QuestionPresentationOptions(prefix="$"),
+                data_options=QuestionDataOptions(number_type=NumberTypeEnum.INTEGER),
+                original_column_name="Whole number prefix",
+            ),
+            "c_whole_number_suffix": DataSourceSchemaColumn(
+                data_type=QuestionDataType.NUMBER,
+                presentation_options=QuestionPresentationOptions(suffix="km"),
+                data_options=QuestionDataOptions(number_type=NumberTypeEnum.INTEGER),
+                original_column_name="Whole number suffix",
+            ),
+        }
+    )
+    data_source = factories.data_source.create(
+        grant=grant_recipient.grant, collection=collection, type=DataSourceType.GRANT_RECIPIENT, schema=schema
+    )
+    data_source.expected_headers = (
+        f"{DATA_SET_EXTERNAL_ID_COLUMN_HEADER},{DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER},"
+        + "British pounds,Decimal number,Just text,Whole number,Whole number prefix,"
+        + "Whole number suffix"
+    )
+
+    yield data_source

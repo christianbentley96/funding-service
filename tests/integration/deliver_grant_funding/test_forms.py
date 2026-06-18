@@ -1,7 +1,4 @@
-import io
-
 import pytest
-from werkzeug.datastructures import FileStorage, MultiDict
 
 from app import DATA_SET_EXTERNAL_ID_COLUMN_HEADER, DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER, ExpressionReference
 from app.common.data.models import Expression
@@ -11,28 +8,13 @@ from app.common.data.types import (
 )
 from app.common.expressions.managed import GreaterThan, LessThan
 from app.deliver_grant_funding.forms import UploadDataSetForm
-
-
-def _build_file_upload_form_data(csv_content: str) -> MultiDict:
-    file = FileStorage(
-        stream=io.BytesIO(csv_content.encode("utf-8")),
-        filename="test.csv",
-        content_type="text/csv",
-    )
-    data = MultiDict(
-        [
-            ("name", "Test Data Set"),
-            ("data_source_type", DataSourceType.GRANT_RECIPIENT),
-            ("file", file),
-        ]
-    )
-    return data
+from tests.integration.utils import build_file_upload_form_data
 
 
 class TestUploadDataSetForm:
     def test_new_data_valid(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -46,7 +28,7 @@ class TestUploadDataSetForm:
 
     def test_new_data_valid_with_missing_values(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,,hello,5,$10,12km"
@@ -75,7 +57,7 @@ class TestUploadDataSetForm:
 
             assert len(data_source.depended_on_by_columns) == 1
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 f"{DATA_SET_EXTERNAL_ID_COLUMN_HEADER},{DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER},"
                 + "Another column\na,b,1000\nc,d,3000"
@@ -107,7 +89,7 @@ class TestUploadDataSetForm:
 
         assert len(dataset_with_column_of_each_type.depended_on_by_columns) == 2
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 f"{DATA_SET_EXTERNAL_ID_COLUMN_HEADER},{DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER},"
                 + "Another column\na,b,1000\nc,d,3000"
@@ -169,7 +151,7 @@ class TestUploadDataSetForm:
             ],
         )
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 f"{DATA_SET_EXTERNAL_ID_COLUMN_HEADER},{DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER},"
                 + "Another column\na,b,1000\nc,d,3000"
@@ -237,7 +219,7 @@ class TestUploadDataSetForm:
             ],
         )
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 f"{DATA_SET_EXTERNAL_ID_COLUMN_HEADER},{DATA_SET_GRANT_RECIPIENT_COLUMN_HEADER},"
                 + "Another column\na,b,1000\nc,d,3000"
@@ -267,7 +249,7 @@ class TestUploadDataSetForm:
         self, factories, dataset_with_column_of_each_type, bad_value
     ):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -285,7 +267,7 @@ class TestUploadDataSetForm:
 
     def test_new_data_in_existing_columns_does_not_match_prefix(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -300,7 +282,7 @@ class TestUploadDataSetForm:
 
     def test_new_data_in_existing_columns_does_not_match_suffix(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -317,7 +299,7 @@ class TestUploadDataSetForm:
 
     def test_new_data_in_existing_columns_does_not_match_integer(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -332,7 +314,7 @@ class TestUploadDataSetForm:
 
     def test_new_data_in_existing_columns_is_not_a_decimal_number(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -349,7 +331,7 @@ class TestUploadDataSetForm:
         self, factories, dataset_with_column_of_each_type
     ):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"
@@ -364,7 +346,7 @@ class TestUploadDataSetForm:
 
     def test_multiple_format_errors_in_same_column_appear_once(self, factories, dataset_with_column_of_each_type):
 
-        data = _build_file_upload_form_data(
+        data = build_file_upload_form_data(
             csv_content=(
                 dataset_with_column_of_each_type.expected_headers
                 + "\na,b,£100,1.2,hello,5,$10,12km"

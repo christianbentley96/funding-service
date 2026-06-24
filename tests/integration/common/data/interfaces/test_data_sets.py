@@ -938,6 +938,7 @@ class TestReplaceUploadedDataSource:
                 all_rows=[],
                 s3_key="file_key",
                 original_filename="file.csv",
+                user=factories.user.create(),
             )
         assert "Unsupported data source type" in str(e.value)
 
@@ -957,6 +958,7 @@ class TestReplaceUploadedDataSource:
                 all_rows=[],
                 s3_key="file_key",
                 original_filename="file.csv",
+                user=factories.user.create(),
             )
         assert "does not belong to grant" in str(e.value)
 
@@ -976,6 +978,7 @@ class TestReplaceUploadedDataSource:
                 all_rows=[],
                 s3_key="file_key",
                 original_filename="file.csv",
+                user=factories.user.create(),
             )
         assert "does not belong to collection" in str(e.value)
 
@@ -995,6 +998,7 @@ class TestReplaceUploadedDataSource:
             name="Most popular cheeses",
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
         from_db = get_data_source(data_source.id, with_organisation_items=False)
         assert from_db.name == "Most popular cheeses"
@@ -1051,6 +1055,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(dataset_with_column_of_each_type.id, with_organisation_items=True)
@@ -1107,6 +1112,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(dataset_with_column_of_each_type.id, with_organisation_items=True)
@@ -1154,6 +1160,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(dataset_with_column_of_each_type.id, with_organisation_items=True)
@@ -1201,6 +1208,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(data_source_id=data_source.id, with_organisation_items=True)
@@ -1250,6 +1258,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(data_source_id=data_source.id, with_organisation_items=True)
@@ -1281,6 +1290,7 @@ class TestReplaceUploadedDataSource:
             all_rows=[],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(dataset_with_column_of_each_type.id)
@@ -1332,6 +1342,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(dataset_with_column_of_each_type.id, with_organisation_items=True)
@@ -1411,6 +1422,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(dataset_with_column_of_each_type.id, with_organisation_items=True)
@@ -1478,6 +1490,7 @@ class TestReplaceUploadedDataSource:
             ],
             s3_key="file_key",
             original_filename="file.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(data_source.id, with_organisation_items=True)
@@ -1505,6 +1518,7 @@ class TestReplaceUploadedDataSource:
             all_rows=[],
             s3_key="new_key",
             original_filename="file_v2.csv",
+            user=factories.user.create(),
         )
 
         from_db = get_data_source(data_source.id, with_organisation_items=True)

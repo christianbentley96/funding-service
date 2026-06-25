@@ -3556,22 +3556,14 @@ def replace_data_set(
     form = UploadDataSetForm(
         existing_data_source_names=[], existing_datasource=data_source, data={"name": data_source.name}
     )
-    # TODO validate grant recipients
-    gr_errors = []
+    # TODO check flow for validating grant recipients, as this will change when bringing in PR #1731
+    #   Don't think we need to validate that here
     if form.validate_on_submit():
         file: FileStorage = form.file.data
         columns, rows = _parse_data_set_csv(form.file.data)
         file_metadata = _upload_data_set_file(grant_id, collection_id, data_source_id, file)
+
         # TODO see if we need to format columns
-        # data_set_session_data = DataSetUploadSessionModel(
-        #     name=form.name.data,
-        #     data_source_id=data_source_id,
-        #     s3_key=file_metadata[0],
-        #     original_filename=file_metadata[1],
-        #     data_source_type=data_source.type,
-        #     preview_data={},  # TODO load preview data
-        #     data_columns=columns,
-        # )
         replace_uploaded_data_source(
             grant_id=grant_id,
             collection_id=collection_id,
